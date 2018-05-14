@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+ *
+ * Copyright (C) 2012 Pascal Noisette
+ *
+ * This file is part of gui.convert an Ajaxplorer plugin
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Library General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor Boston, MA 02110-1301,  USA
+ *
+-->
+<ajxp_plugin id="gui.convert" label="CONF_MESSAGE[convert mime]" description="CONF_MESSAGE[Convert mime to each other]" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="file:../core.ajaxplorer/ajxp_registry.xsd">
+	<class_definition filename="plugins/gui.convert/class.Convert.php" classname="GuiConvertPlugin"/>
+	<client_settings>
+		<resources>
+		<i18n namespace="gui_convert" path="plugins/gui.convert/resources/i18n" />
+		<img_library alias="gui_convert_images" path="plugins/gui.convert/resources/images" />
+	    	<css file="plugins/gui.convert/resources/style.gui.convert.css" autoload="true"/>
+		</resources>	
+	</client_settings>
+	<registry_contributions>
+		<convertions>
+			<tiff>
+				<pdf filename="plugins/gui.convert/resources/adapters/tiff/class.Pdf.php" classname="GuiConvertAdapterTiffToPdf"/>
+			</tiff>
+		</convertions>
+		<actions>				
+			<action name="convert">
+				<gui text="gui_convert.3" title="gui_convert.3" src="gui_convert_images/ICON_SIZE/pdf.png" hasAccessKey="false">
+					<context selection="true" dir="false" recycle="hidden"
+						actionBar="true" contextMenu="true" infoPanel="true"
+						actionBarGroup="get" inZip="false">
+					</context>
+					<rightsContext noUser="true" userLogged="only" read="true" write="true" adminOnly=""></rightsContext>
+					<selectionContext dir="false" file="true" recycle="false" unique="true"  multipleOnly="false"  allowedMimes="*" behaviour="hidden"></selectionContext>
+				</gui>
+				<processing>
+					<clientCallback prepareModal="true" dialogOpenForm="convert">
+						<dialogOnOpen><![CDATA[
+				var rm =new ResourcesManager();
+				rm.loadCSSResource('plugins/gui.convert/resources/style.gui.convert.css');
+				oForm.down('[name="ok"]').hide();
+
+				
+				var connexion = new Connexion();
+                            connexion.setParameters(new Hash({get_action:'retrive_target_format', 'mime':ajaxplorer.getUserSelection().getUniqueNode().getAjxpMime()}));
+                            connexion.onComplete = function(transport){
+                                $("device_list_placeholder").innerHTML = transport.responseText;
+                                $("mime").select();
+				if ($("mime").length>0) {
+					oForm.down('[name="ok"]').show();
+				} else {
+					$("device_list_placeholder").innerHTML = "AJXP_MESSAGE[gui_convert.4]";
+				}
+                            };
+                            connexion.sendAsync();
+
+						]]></dialogOnOpen>
+						<dialogOnComplete><![CDATA[
+						var mime = oForm.down('[name="mime"]').getValue();
+						var bgManager = ajaxplorer.actionBar.bgManager;
+						bgManager.queueAction("convert", new Hash({to:mime, from:ajaxplorer.getUserSelection().getUniqueNode().getAjxpMime(), file:ajaxplorer.getUserSelection().getUniqueNode().getPath()}), "");
+						bgManager.next();
+						hideLightBox(true);
+						]]></dialogOnComplete>
+					</clientCallback>
+					<clientForm id="convert"><![CDATA[
+					<div id="convert" action="convert" box_width="320">
+					
+					<br/> 
+
+					Target format :
+					<span id="device_list_placeholder">
+						<img src="./plugins/gui.ajax/res/themes/umbra/images/loadingImage.gif" alt="Please wait" />
+					</span>
+					<br/>
+
+					</br>						
+					
+					</div>
+					]]></clientForm>
+					<serverCallback methodName="convertAction"></serverCallback>
+				</processing>
+			</action>
+<!--one ajax request action to display scan type device available-->
+			<action name="retrive_target_format">
+				<processing>	
+					<serverCallback methodName="retriveTargetFormatAction"></serverCallback>
+				</processing>
+			</action>	
+		</actions>			
+	</registry_contributions>				
+</ajxp_plugin>

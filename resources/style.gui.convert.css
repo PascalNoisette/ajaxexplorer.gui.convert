@@ -1,0 +1,10 @@
+#scan input, #scan select, #scan #device_list_placeholder {
+	float:right;
+}
+#scan br {
+	clear:both;
+}
+#scan #scan_name
+{
+	width:168px;
+}
